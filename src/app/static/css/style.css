@@ -21,10 +21,10 @@ body {
   cursor: pointer;
 }
 
-.undigged-cell {
+.undugged-cell {
   background-color: #776e6e7e;
 }
 
-.digged-cell {
+.dugged-cell {
   background-color: #ffffff;
 }

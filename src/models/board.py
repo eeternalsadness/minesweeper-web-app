@@ -1,52 +1,59 @@
 import random
 
 class Board:
-    def __init__(self, num_rows, num_cols):
+    def __init__(self, num_rows, num_cols, board = [], dug = []):
         self.num_rows = num_rows
         self.num_cols = num_cols
-        self.num_bombs = num_rows * num_cols * 20 // 100
 
-        self.bombs = set()
-        self.dug = set()
-        self.board = self.make_new_board()
-        self.assign_values_to_board()       
+        if len(board) == 0 and len(dug) == 0:
+            self.num_bombs = num_rows * num_cols * 40 // 100
+
+            self.bombs = []
+            self.dug = []
+            self.board = self.make_new_board()
+            self.assign_values_to_board()
+        elif len(board) > 0:
+            self.board = board
+            self.num_bombs = board.count(-1)
+            self.dug = dug
+        else:
+            raise ValueError("dug cannot have values when board is empty!")
 
     def make_new_board(self):
-        board = [[0] * self.num_cols for _ in range(0, self.num_rows)]
-        bombs = random.sample(range(0, self.num_rows * self.num_cols), self.num_bombs)
+        board = [0] * self.num_cols * self.num_rows
+        bombs = random.sample(range(0, len(board)), self.num_bombs)
         for bomb in bombs:
-            r = bomb // self.num_rows
-            c = bomb % self.num_cols
-            board[r][c] = -1
-            self.bombs.add((r, c))
+            board[bomb] = -1
+            self.bombs.append(bomb)
 
         return board
 
     def assign_values_to_board(self):
-        for row, col in self.bombs:
-            for r in [-1, 0, 1]:
-                for c in [-1, 0, 1]:
-                    new_row = row + r
-                    new_col = col + c
-                    if new_row >= 0 and new_row < self.num_rows and new_col >= 0 and new_col < self.num_cols and self.board[new_row][new_col] != -1:
-                        self.board[new_row][new_col] += 1
+        for bomb in self.bombs:
+            row, col = divmod(bomb, self.num_cols)
+            for i in range(-1, 2):
+                for j in range(-1, 2):
+                    new_row, new_col = row + i, col + j
+                    index = new_row * self.num_cols + new_col
+                    if 0 <= new_row < self.num_rows and 0 <= new_col < self.num_cols and self.board[index] != -1:
+                        self.board[index] += 1
 
     def dig(self, row, col):
-        self.dug.add((row, col))
+        index = row * self.num_cols + col
+        self.dug.append(index)
 
-        if self.board[row][col] == -1:
+        if self.board[index] == -1:
             return False
         
         for i, j in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            r = row + i
-            c = col + j
-            if (r, c) not in self.dug and r >= 0 and r < self.num_rows and c >= 0 and c < self.num_cols and self.board[r][c] != -1:
-                self.dig(r, c)
+            new_index = index + i * self.num_cols + j
+            if new_index not in self.dug and 0 <= new_index < self.num_rows * self.num_cols and self.board[new_index] != -1:
+                self.dig(new_index // self.num_cols, new_index % self.num_cols)
 
         return True
 
     def is_game_won(self):
-        undugged = self.num_rows * self.num_cols - len(self.dug)
+        undugged = len(self.board) - len(self.dug)
         return undugged == self.num_bombs
 
     def __str__(self):
@@ -59,7 +66,8 @@ class Board:
         for i in range(0, self.num_rows):
             output += f'{i:>2} |'
             for j in range(0, self.num_cols):
-                val = self.board[i][j] if self.board[i][j] != -1 else '*'
+                index = i * self.num_cols + j
+                val = self.board[index] if self.board[index] != -1 else '*'
                 output += f'{val:^3}|'
             output += '\n'
 
