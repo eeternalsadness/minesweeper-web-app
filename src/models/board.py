@@ -2,19 +2,14 @@ import random
 
 class Board:
     def __init__(self, num_rows, num_cols):
-        # keep track of these parameters because we might find them helpful later on
         self.num_rows = num_rows
         self.num_cols = num_cols
         self.num_bombs = num_rows * num_cols * 20 // 100
 
-        # get the board
         self.bombs = set()
-        self.board = self.make_new_board()
-        self.assign_values_to_board()
-
-        # initialize a set to keep track of which locations we've uncovered
-        # we will put (row,col) tuples into these sets 
         self.dug = set()
+        self.board = self.make_new_board()
+        self.assign_values_to_board()       
 
     def make_new_board(self):
         board = [[0] * self.num_cols for _ in range(0, self.num_rows)]
@@ -49,6 +44,10 @@ class Board:
                 self.dig(r, c)
 
         return True
+
+    def is_game_won(self):
+        undugged = self.num_rows * self.num_cols - len(self.dug)
+        return undugged == self.num_bombs
 
     def __str__(self):
         output = ' ' * 4

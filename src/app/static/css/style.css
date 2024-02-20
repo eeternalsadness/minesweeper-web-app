@@ -1,0 +1,30 @@
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+}
+
+#minesweeper-board {
+  display: grid;
+  gap: 1px;
+}
+
+.cell {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #000;
+  text-align: center;
+  line-height: 30px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.undigged-cell {
+  background-color: #776e6e7e;
+}
+
+.digged-cell {
+  background-color: #ffffff;
+}
