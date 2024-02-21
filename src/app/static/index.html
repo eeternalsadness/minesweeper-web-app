@@ -7,8 +7,26 @@
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
+    <div id="start-game">
+      <form id="start-game-form" action="" method="POST">
+        <label for="num_rows"># rows: </label>
+        <input id="num_rows" type="number" name="num_rows" />
+        <label for="num_cols"># columns: </label>
+        <input id="num_cols" type="number" name="num_cols" />
+        <p>OR</p>
+        <label for="id">Game ID: </label>
+        <input id="id" type="text" name="id" />
+        <div>
+          <button type="submit">Submit</button>
+          <button type="reset">Reset</button>
+        </div>
+      </form>
+    </div>
     <div id="minesweeper-board"></div>
 
     <script src="js/minesweeper.js"></script>
+    <script>
+      app.startup();
+    </script>
   </body>
 </html>

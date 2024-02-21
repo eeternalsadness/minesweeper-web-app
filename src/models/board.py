@@ -46,9 +46,16 @@ class Board:
             return False
         
         for i, j in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            new_row = row + i
+            new_col = col + j
             new_index = index + i * self.num_cols + j
-            if new_index not in self.dug and 0 <= new_index < self.num_rows * self.num_cols and self.board[new_index] != -1:
-                self.dig(new_index // self.num_cols, new_index % self.num_cols)
+            if (
+                0 <= new_row < self.num_rows
+                and 0 <= new_col < self.num_cols
+                and new_index not in self.dug 
+                and self.board[new_index] != -1
+            ):
+                self.dig(new_row, new_col)
 
         return True
 

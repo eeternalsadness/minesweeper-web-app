@@ -1,4 +1,5 @@
 from flask import request, jsonify, current_app as app
+from flask_cors import CORS
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from models import board
@@ -6,6 +7,8 @@ from models import board
 client = MongoClient('mongodb://localhost:27017')
 db = client['minesweeper']
 collection = db['board']
+
+CORS(app)
 
 @app.route('/start', methods=['POST'])
 def create_board():
@@ -16,38 +19,44 @@ def create_board():
     
     game_board = board.Board(request.json['num_rows'], request.json['num_cols'])
     
-    data = {
-        'board': game_board.board,
-        'num_rows': game_board.num_rows,
-        'num_cols': game_board.num_cols,
-        'dug': game_board.dug,
-        'result': 0
-    }
-    result = collection.insert_one(data)
-    data['id'] = str(result.inserted_id)
-    del data['_id']
-    # print(data)
-    
+    try:
+        data = {
+            'board': game_board.board,
+            'num_rows': game_board.num_rows,
+            'num_cols': game_board.num_cols,
+            'dug': game_board.dug,
+            'result': 0
+        }
+
+        result = collection.insert_one(data)
+        data['id'] = str(result.inserted_id)
+        del data['_id']
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+        
     return jsonify(data)
 
 @app.route('/board', methods=['GET'])
 def get_board():
-    if 'id' not in request.json:
-        return jsonify({'error': 'ID is required'}), 400
-    
     try:
-        object_id = ObjectId(request.json['id'])
+        object_id = ObjectId(request.args.get('id'))
         curr_board = collection.find_one({'_id': object_id})
 
         if curr_board:
+            # check if game is already over
+            if curr_board['result'] != 0:
+                return jsonify({'error': 'Game is already over'}), 400
+            
             # Convert ObjectId to string for JSON serialization
-            curr_board['_id'] = str(curr_board['_id'])
+            curr_board['id'] = str(curr_board['_id'])
+            del curr_board['_id']
             return jsonify(curr_board)
         else:
-            return jsonify({'message': 'Board not found'}), 404
+            return jsonify({'error': 'Board not found'}), 404
 
     except Exception as e:
-        return jsonify({'message': str(e)}), 500
+        return jsonify({'error': str(e)}), 500
     
 @app.route('/board', methods=['POST'])
 def dig():
@@ -81,7 +90,7 @@ def dig():
 
             return jsonify(curr_board)
         else:
-            return jsonify({'message': 'Board not found'}), 404
+            return jsonify({'error': 'Board not found'}), 404
 
     except Exception as e:
-        return jsonify({'message': str(e)}), 500
+        return jsonify({'error': str(e)}), 500

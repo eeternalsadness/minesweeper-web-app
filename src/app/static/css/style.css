@@ -8,7 +8,7 @@ body {
 
 #minesweeper-board {
   display: grid;
-  gap: 1px;
+  gap: 0px;
 }
 
 .cell {
@@ -18,13 +18,23 @@ body {
   text-align: center;
   line-height: 30px;
   font-size: 14px;
-  cursor: pointer;
 }
 
 .undugged-cell {
   background-color: #776e6e7e;
+  cursor: pointer;
 }
 
 .dugged-cell {
   background-color: #ffffff;
+  cursor: default;
+}
+
+.bomb-cell {
+  background-color: rgb(210, 75, 75);
+  cursor: default;
+}
+
+.hidden {
+  display: none;
 }
