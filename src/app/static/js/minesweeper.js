@@ -49,7 +49,7 @@
     // start new game with # rows and # cols
     if (numRowsInput.value.trim() != "" && numColsInput.value.trim() != "") {
       let numRows = parseInt(numRowsInput.value.trim());
-      let numCols = parseInt(numRowsInput.value.trim());
+      let numCols = parseInt(numColsInput.value.trim());
       await startGame(numRows, numCols);
     }
     // continue game with game ID
@@ -126,10 +126,10 @@
   function renderBoard() {
     // console.log("Rendering board");
 
-    let numRows = app.gameData["num_rows"];
-    let numCols = app.gameData["num_cols"];
-    let board = app.gameData["board"];
-    let dug = app.gameData["dug"];
+    let numRows = app.gameData.num_rows;
+    let numCols = app.gameData.num_cols;
+    let board = app.gameData.board;
+    let dug = app.gameData.dug;
 
     app.boardElement.style.gridTemplateColumns = `repeat(${numCols}, 30px)`;
     app.boardElement.innerHTML = ""; // Clear existing cells
@@ -146,11 +146,19 @@
             cell.textContent = "*";
           } else {
             cell.classList.add("dugged-cell");
-            cell.textContent = board[index] == 0 ? "" : board[index];
+            if (board[index] != 0) {
+              cell.textContent = board[index];
+              cell.classList.add("clickable");
+              cell.addEventListener("click", handleClick);
+            }
           }
         } else {
-          cell.classList.add("undugged-cell");
+          if (app.gameData.flags.includes(index)) {
+            cell.textContent = "X";
+          }
+          cell.classList.add("undugged-cell", "clickable");
           cell.addEventListener("click", handleClick);
+          cell.addEventListener("contextmenu", handleRightClick);
         }
 
         cell.dataset.row = row;
@@ -162,17 +170,17 @@
     console.log("Finished rendering");
   }
 
-  async function handleClick(event) {
+  async function handleClick(e) {
     // console.log(app.gameData);
     const data = {
-      id: app.gameData.id,
-      row: parseInt(event.target.dataset.row),
-      col: parseInt(event.target.dataset.col),
+      id: app.gameData._id,
+      row: parseInt(e.target.dataset.row),
+      col: parseInt(e.target.dataset.col),
     };
     // console.log(data);
 
     try {
-      await fetch(`${backend}/board`, {
+      await fetch(`${backend}/dig`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -195,14 +203,75 @@
     }
   }
 
+  async function handleRightClick(e) {
+    e.preventDefault();
+
+    const data = {
+      id: app.gameData._id,
+      row: parseInt(e.target.dataset.row),
+      col: parseInt(e.target.dataset.col),
+    };
+
+    try {
+      await fetch(`${backend}/flag`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
+        .then((response) => response.json())
+        .then((responseData) => {
+          app.gameData = responseData;
+          renderBoard();
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    } catch (error) {
+      alert(error);
+      console.error("Unexpected error: ", error);
+    }
+  }
+
   function checkGameOver() {
     console.log("Checking if game is over");
     if (app.gameData.result == -1) {
       alert("Game over!");
+      deleteBoard();
       resetUI();
     } else if (app.gameData.result == 1) {
       alert("Congratulations! You won!");
+      deleteBoard();
       resetUI();
+    }
+  }
+
+  async function deleteBoard() {
+    try {
+      const response = await fetch(`${backend}/board?id=${app.gameData._id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      // console.log("Checking response");
+      const responseData = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = `Error: ${response.status} - ${responseData["error"]}`;
+        alert(errorMessage);
+        console.error(errorMessage);
+        return false;
+      }
+
+      app.gameData = {};
+      return true;
+    } catch (error) {
+      alert(error);
+      console.error("Unexpected error: ", error);
+      return false;
     }
   }
 

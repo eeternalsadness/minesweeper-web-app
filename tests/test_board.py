@@ -2,13 +2,17 @@ import pytest
 import src.models.board as board
 
 class Test_Board:
-    def setup_method(self):
+    def setup_class(self):
         self.board = board.Board(20, 10)
 
         pre_made_board = [
             2, -1, 2, 1, 2, 1, 1, 0, 1, -1, -1, 4, 4, -1, 3, -1, 2, 1, 2, 1, 3, -1, -1, 6, -1, 4, 3, -1, 2, 1, -1, 6, -1, -1, -1, 5, -1, 4, -1, 2, -1, -1, 4, 5, 4, -1, -1, 4, 4, -1, -1, 5, -1, 4, -1, 4, 3, 4, -1, -1, 1, 3, -1, -1, 2, 2, -1, 3, -1, -1, 2, 3, 3, 3, 2, 3, 2, 3, 2, 2, -1, -1, 3, 3, -1, 5, -1, 2, 0, 0, -1, -1, 3, -1, -1, -1, -1, 2, 0, 0
         ]
         self.pre_made_board = board.Board(10, 10, pre_made_board)
+
+    def teardown_class(self):
+        del self.board
+        del self.pre_made_board
 
     def test_num_bombs(self):
         assert self.board.num_bombs == 80
@@ -37,6 +41,17 @@ class Test_Board:
 
     def test_pre_made_board(self):
         assert self.pre_made_board.num_bombs == 40
+        assert self.pre_made_board.dig(0, 0) == True
         assert self.pre_made_board.dig(0, 1) == False
-        assert self.pre_made_board.dig(0, 2) == True
-        assert len(self.pre_made_board.dug) == 22
+        assert len(self.pre_made_board.dug) == 94
+
+    def test_flag(self):
+        self.pre_made_board.flag(0, 2)
+        assert len(self.pre_made_board.flags) == 1
+        self.pre_made_board.flag(0, 2)
+        assert len(self.pre_made_board.flags) == 0
+        
+
+    # def test_board_value_error(self):
+    #     with pytest.raises(ValueError, match = "dug cannot have values when board is empty!"):
+    #         board.Board(10, 10, dug = [0])

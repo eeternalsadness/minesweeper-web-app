@@ -22,17 +22,18 @@ body {
 
 .undugged-cell {
   background-color: #776e6e7e;
-  cursor: pointer;
 }
 
 .dugged-cell {
   background-color: #ffffff;
-  cursor: default;
+}
+
+.clickable {
+  cursor: pointer;
 }
 
 .bomb-cell {
-  background-color: rgb(210, 75, 75);
-  cursor: default;
+  background-color: #d24b4b;
 }
 
 .hidden {

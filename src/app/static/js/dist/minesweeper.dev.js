@@ -62,7 +62,7 @@
             }
 
             numRows = parseInt(numRowsInput.value.trim());
-            numCols = parseInt(numRowsInput.value.trim());
+            numCols = parseInt(numColsInput.value.trim());
             _context.next = 22;
             return regeneratorRuntime.awrap(startGame(numRows, numCols));
 
@@ -198,10 +198,10 @@
 
   function renderBoard() {
     // console.log("Rendering board");
-    var numRows = app.gameData["num_rows"];
-    var numCols = app.gameData["num_cols"];
-    var board = app.gameData["board"];
-    var dug = app.gameData["dug"];
+    var numRows = app.gameData.num_rows;
+    var numCols = app.gameData.num_cols;
+    var board = app.gameData.board;
+    var dug = app.gameData.dug;
     app.boardElement.style.gridTemplateColumns = "repeat(".concat(numCols, ", 30px)");
     app.boardElement.innerHTML = ""; // Clear existing cells
 
@@ -217,11 +217,21 @@
             cell.textContent = "*";
           } else {
             cell.classList.add("dugged-cell");
-            cell.textContent = board[index] == 0 ? "" : board[index];
+
+            if (board[index] != 0) {
+              cell.textContent = board[index];
+              cell.classList.add("clickable");
+              cell.addEventListener("click", handleClick);
+            }
           }
         } else {
-          cell.classList.add("undugged-cell");
+          if (app.gameData.flags.includes(index)) {
+            cell.textContent = "X";
+          }
+
+          cell.classList.add("undugged-cell", "clickable");
           cell.addEventListener("click", handleClick);
+          cell.addEventListener("contextmenu", handleRightClick);
         }
 
         cell.dataset.row = row;
@@ -233,7 +243,7 @@
     console.log("Finished rendering");
   }
 
-  function handleClick(event) {
+  function handleClick(e) {
     var data;
     return regeneratorRuntime.async(function handleClick$(_context4) {
       while (1) {
@@ -241,14 +251,14 @@
           case 0:
             // console.log(app.gameData);
             data = {
-              id: app.gameData.id,
-              row: parseInt(event.target.dataset.row),
-              col: parseInt(event.target.dataset.col)
+              id: app.gameData._id,
+              row: parseInt(e.target.dataset.row),
+              col: parseInt(e.target.dataset.col)
             }; // console.log(data);
 
             _context4.prev = 1;
             _context4.next = 4;
-            return regeneratorRuntime.awrap(fetch("".concat(backend, "/board"), {
+            return regeneratorRuntime.awrap(fetch("".concat(backend, "/dig"), {
               method: "POST",
               headers: {
                 "Content-Type": "application/json"
@@ -285,16 +295,117 @@
     }, null, null, [[1, 6]]);
   }
 
+  function handleRightClick(e) {
+    var data;
+    return regeneratorRuntime.async(function handleRightClick$(_context5) {
+      while (1) {
+        switch (_context5.prev = _context5.next) {
+          case 0:
+            e.preventDefault();
+            data = {
+              id: app.gameData._id,
+              row: parseInt(e.target.dataset.row),
+              col: parseInt(e.target.dataset.col)
+            };
+            _context5.prev = 2;
+            _context5.next = 5;
+            return regeneratorRuntime.awrap(fetch("".concat(backend, "/flag"), {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(data)
+            }).then(function (response) {
+              return response.json();
+            }).then(function (responseData) {
+              app.gameData = responseData;
+              renderBoard();
+            })["catch"](function (error) {
+              console.error("Error:", error);
+            }));
+
+          case 5:
+            _context5.next = 11;
+            break;
+
+          case 7:
+            _context5.prev = 7;
+            _context5.t0 = _context5["catch"](2);
+            alert(_context5.t0);
+            console.error("Unexpected error: ", _context5.t0);
+
+          case 11:
+          case "end":
+            return _context5.stop();
+        }
+      }
+    }, null, null, [[2, 7]]);
+  }
+
   function checkGameOver() {
     console.log("Checking if game is over");
 
     if (app.gameData.result == -1) {
       alert("Game over!");
+      deleteBoard();
       resetUI();
     } else if (app.gameData.result == 1) {
       alert("Congratulations! You won!");
+      deleteBoard();
       resetUI();
     }
+  }
+
+  function deleteBoard() {
+    var response, responseData, errorMessage;
+    return regeneratorRuntime.async(function deleteBoard$(_context6) {
+      while (1) {
+        switch (_context6.prev = _context6.next) {
+          case 0:
+            _context6.prev = 0;
+            _context6.next = 3;
+            return regeneratorRuntime.awrap(fetch("".concat(backend, "/board?id=").concat(app.gameData._id), {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json"
+              }
+            }));
+
+          case 3:
+            response = _context6.sent;
+            _context6.next = 6;
+            return regeneratorRuntime.awrap(response.json());
+
+          case 6:
+            responseData = _context6.sent;
+
+            if (response.ok) {
+              _context6.next = 12;
+              break;
+            }
+
+            errorMessage = "Error: ".concat(response.status, " - ").concat(responseData["error"]);
+            alert(errorMessage);
+            console.error(errorMessage);
+            return _context6.abrupt("return", false);
+
+          case 12:
+            app.gameData = {};
+            return _context6.abrupt("return", true);
+
+          case 16:
+            _context6.prev = 16;
+            _context6.t0 = _context6["catch"](0);
+            alert(_context6.t0);
+            console.error("Unexpected error: ", _context6.t0);
+            return _context6.abrupt("return", false);
+
+          case 21:
+          case "end":
+            return _context6.stop();
+        }
+      }
+    }, null, null, [[0, 16]]);
   }
 
   function resetUI() {

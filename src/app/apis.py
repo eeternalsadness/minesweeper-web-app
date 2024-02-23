@@ -25,12 +25,12 @@ def create_board():
             'num_rows': game_board.num_rows,
             'num_cols': game_board.num_cols,
             'dug': game_board.dug,
+            'flags': game_board.flags,
             'result': 0
         }
 
         result = collection.insert_one(data)
-        data['id'] = str(result.inserted_id)
-        del data['_id']
+        data['_id'] = str(result.inserted_id)
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -49,16 +49,25 @@ def get_board():
                 return jsonify({'error': 'Game is already over'}), 400
             
             # Convert ObjectId to string for JSON serialization
-            curr_board['id'] = str(curr_board['_id'])
-            del curr_board['_id']
+            curr_board['_id'] = str(curr_board['_id'])
             return jsonify(curr_board)
         else:
             return jsonify({'error': 'Board not found'}), 404
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/board', methods=['DELETE'])
+def delete_board():
+    try:
+        object_id = ObjectId(request.args.get('id'))
+        collection.delete_one({'_id': object_id})
+        return jsonify({'message': f'Deleted board {object_id}'})
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
     
-@app.route('/board', methods=['POST'])
+@app.route('/dig', methods=['POST'])
 def dig():
     if 'id' not in request.json:
         return jsonify({'error': 'ID is required'}), 400
@@ -72,7 +81,13 @@ def dig():
         curr_board = collection.find_one({'_id': object_id})
 
         if curr_board:
-            updated_board = board.Board(curr_board['num_rows'], curr_board['num_cols'], curr_board['board'], curr_board['dug'])
+            updated_board = board.Board(
+                num_rows = curr_board['num_rows'], 
+                num_cols = curr_board['num_cols'], 
+                board = curr_board['board'], 
+                dug = curr_board['dug'], 
+                flags = curr_board['flags']
+                )
             if not updated_board.dig(request.json['row'], request.json['col']):
                 curr_board['result'] = -1
                 
@@ -81,12 +96,49 @@ def dig():
 
             curr_board['board'] = updated_board.board
             curr_board['dug'] = updated_board.dug
-            del curr_board['_id']
 
             collection.update_one({'_id': object_id}, {'$set': curr_board})
 
             # Convert ObjectId to string for JSON serialization
-            curr_board['id'] = str(object_id)
+            curr_board['_id'] = str(object_id)
+
+            return jsonify(curr_board)
+        else:
+            return jsonify({'error': 'Board not found'}), 404
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/flag', methods=['POST'])
+def flag():
+    if 'id' not in request.json:
+        return jsonify({'error': 'ID is required'}), 400
+    if 'row' not in request.json:
+        return jsonify({'error': 'Row is required'}), 400
+    if 'col' not in request.json:
+        return jsonify({'error': 'Column is required'}), 400
+
+    try:
+        object_id = ObjectId(request.json['id'])
+        curr_board = collection.find_one({'_id': object_id})
+
+        if curr_board:
+            updated_board = board.Board(
+                num_rows = curr_board['num_rows'], 
+                num_cols = curr_board['num_cols'], 
+                board = curr_board['board'], 
+                dug = curr_board['dug'], 
+                flags = curr_board['flags']
+                )
+            
+            updated_board.flag(request.json['row'], request.json['col'])
+
+            curr_board['flags'] = updated_board.flags
+
+            collection.update_one({'_id': object_id}, {'$set': curr_board})
+
+            # Convert ObjectId to string for JSON serialization
+            curr_board['_id'] = str(object_id)
 
             return jsonify(curr_board)
         else:
